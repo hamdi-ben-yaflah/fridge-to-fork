@@ -10,6 +10,10 @@ import {
 
 export const MAX_HISTORY = 20
 
+// Not crypto.randomUUID: browsers only expose it on HTTPS or localhost.
+let lastMessageId = 0
+const nextMessageId = () => String(++lastMessageId)
+
 export type UserMessage = {
   id: string
   role: "user"
@@ -61,7 +65,7 @@ export function useChefChat() {
     const controller = new AbortController()
     controllerRef.current = controller
     let draft: ChefMessage = {
-      id: crypto.randomUUID(),
+      id: nextMessageId(),
       role: "chef",
       text: "",
       meals: [],
@@ -125,7 +129,7 @@ export function useChefChat() {
   const send = (text: string, photo: File | null) => {
     const next: ThreadMessage[] = [
       ...messages,
-      { id: crypto.randomUUID(), role: "user", text, photo },
+      { id: nextMessageId(), role: "user", text, photo },
     ]
     setMessages(next)
     void run(next)

@@ -157,6 +157,22 @@ test("The chat request carries the login token", async ({ page }) => {
   expect((await sent).headers().authorization).toMatch(/^Bearer .+/)
 })
 
+test("Sending works on plain-HTTP hosts without crypto.randomUUID", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(crypto, "randomUUID", { value: undefined })
+  })
+  await stubChat(page, replied)
+  await page.goto("/chef")
+
+  await say(page, "eggs, rice")
+
+  await expect(page.getByRole("log", { name: "Chat" })).toContainText(
+    "Here is a quick idea.",
+  )
+})
+
 test("The page is branded Fridge to Fork", async ({ page }) => {
   await page.goto("/chef")
 
@@ -724,9 +740,19 @@ const TWO_MEALS = {
 
 test("Meals build a merged shopping list that can be copied", async ({
   page,
-  context,
 }) => {
-  await context.grantPermissions(["clipboard-read", "clipboard-write"])
+  // A stand-in clipboard: CI serves http://backend:8000, where browsers hide the real one.
+  await page.addInitScript(() => {
+    const copied: string[] = []
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (text: string) => {
+          copied.push(text)
+        },
+        readText: async () => copied[copied.length - 1] ?? "",
+      },
+    })
+  })
   await stubChat(
     page,
     sse([
