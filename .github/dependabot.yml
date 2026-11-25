@@ -43,6 +43,9 @@ updates:
     labels: [dependencies, internal]
     ignore:
       - dependency-name: "@hey-api/openapi-ts"
+      # TypeScript 7 drops the JS compiler API that @hey-api/openapi-ts uses
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     groups:
       npm-packages:
         patterns:
